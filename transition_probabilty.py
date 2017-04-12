@@ -3,8 +3,7 @@ from poisson import Poisson
 
 
 def transition_probabilty(s, req, ret, action=0):
-    '''
-    
+    '''    
     :param s: Current State
     :param req: Mean value of requests
     :param ret: Mean value of returns
@@ -15,27 +14,23 @@ def transition_probabilty(s, req, ret, action=0):
     p_ret = Poisson.pmf_series(ret, 20 - s)
     p = np.outer(p_req, p_ret)
 
+    transp = np.asarray([p.trace(offset) for offset in range(-s, 20-s+1)])
 
+    if action > 0:
+        tail = sum(transp[-action:])
+        transp[-action-1] += tail
+        transp[-action:] = 0
+    elif action < 0:
+        tail = sum(transp[:-action])
+        transp[-action] += tail
+        transp[:-action] = 0
 
-    transp = np.zeros(21)
-
-    for nth, offset in enumerate(range(-s, 20-s+1), start=action):
-        _trace = np.trace(p, offset)
-        if 0 <= nth < 21:
-            transp[nth] += _trace
-        elif nth >= 21:
-            transp[-1] += _trace
-        elif nth < 0:
-            transp[0] += _trace
-        else:
-            raise ValueError("Should not be here")
-
-    return transp
+    return np.roll(transp, shift=action)
 
 
 if __name__ == '__main__':
     state = np.arange(21)
-    p = transition_probabilty(16, 3, 3, -10)
+    p = transition_probabilty(16, 3, 3, 10)
 
     print(sum(p))
 
