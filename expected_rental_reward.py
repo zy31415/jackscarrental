@@ -1,37 +1,47 @@
-from scipy.stats import poisson
+from poisson import Poisson
 import numpy as np
 
-class ExpectedRentalReward:
-    ''' I implemented two methods using different algorithms.
-Tests show that loop_method is much slower than cdf_method for big s and mu,
-thus cdf_method is recommended.
-'''
+
+class ExpectedRentalReward(object):
+    cache = None
+    mu1 = None
+    mu2 = None
+
+    RENTAL_REWARD = 10.
 
     @classmethod
-    def loop_method(cls, s, mu):
-        reward = 0
-        requests = 0
-        
-        while True:
-            _p = poisson.pmf(requests, mu)
-            
-            _r = requests * 10 * _p if requests <= s else s * 10 * _p
-
-            if requests > s and _r < 1e-6:
-                break
-
-            reward += _r
-            requests += 1
-            
-        return reward
+    def set(cls, mu1, mu2):
+        cls.mu1 = mu1
+        cls.mu2 = mu2
+        cls.cache = None
 
     @classmethod
-    def cdf_method(cls, s, mu):
-        requests = np.arange(s+1)
-        rewards = 10 * np.arange(s+1)
-        p = poisson.pmf(requests, mu)
+    def get(cls):
+        if cls.cache is None:
+            r1 = np.asarray([cls.state_reward(s, cls.mu1) for s in range(21)])
+            r2 = np.asarray([cls.state_reward(s, cls.mu2) for s in range(21)])
+            cls.cache = r1[:, np.newaxis] + r2
 
-        # for number of requests equal to or larger than state:
-        p[-1] = 1. - poisson.cdf(s-1, mu)
+        return cls.cache
 
+    @classmethod
+    def state_reward(cls, s, mu):
+        rewards = cls.RENTAL_REWARD * np.arange(s + 1)
+        p = Poisson.pmf_series(mu, cutoff=s)
         return sum(rewards * p)
+
+
+if __name__ == '__main__':
+
+    ExpectedRentalReward.set(3, 4)
+
+    r = ExpectedRentalReward.get()
+
+    print(r)
+
+    import matplotlib.pylab as plt
+
+    plt.pcolor(r)
+    plt.colorbar()
+    plt.show()
+

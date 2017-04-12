@@ -39,10 +39,13 @@ def transition_probabilty(s, req, ret, action=0):
     return transp
 
 
-state = np.arange(21)
-p = transition_probabilty(16, 3, 3, -10)
+if __name__ == '__main__':
+    state = np.arange(21)
+    p = transition_probabilty(16, 3, 3, -10)
 
-from matplotlib.pylab import plt
+    print(sum(p))
 
-plt.plot(p)
-plt.show()
+    from matplotlib.pylab import plt
+
+    plt.plot(p)
+    plt.show()

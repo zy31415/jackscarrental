@@ -1,6 +1,7 @@
 import numpy as np
-from scipy.stats import poisson
 
+from expected_rental_reward import ExpectedRentalReward
+from transition_probabilty import transition_probabilty
 
 # Problem definition:
 capacity = 20
@@ -14,84 +15,53 @@ request_mean_G2 = 4
 return_mean_G2 = 2
 
 
-def poisson_cutoff(lam, cutoff):
-    seq = np.arange(cutoff+1)
-    p = poisson.pmf(seq, lam)
-    # for number of requests equal to or larger than state:
-    p[-1] = 1. - poisson.cdf(cutoff - 1, lam)
-
-    return p
-
-
-def expected_rental_reward(s, mu):
-    global rental_reward
-    p = poisson_cutoff(mu, s)
-    rewards = rental_reward * np.arange(s+1)
-    return sum(rewards * p)
-
-
-def expected_rental_reward2D(s, mu):
-    r1 = expected_rental_reward(s[0], mu[0])
-    r2 = expected_rental_reward(s[1], mu[1])
-
-    print(r1)
-    print(r2)
-
-    return r1[:, np.newaxis] + r2
-
-
-def transition_probabilty(s, req, ret, action=0):
-    '''
-    
-    :param s: Current State
-    :param req: Mean value of requests
-    :param ret: Mean value of returns
-    :param action: Action. Positive means move in. Negativ means move out.
-    :return: Transition probability.
-    '''
-
-    global capacity
-
-    p_req = poisson_cutoff(req, s)
-    p_ret = poisson_cutoff(ret, capacity - s)
-    p = np.outer(p_req, p_ret)
-
-    transp = np.zeros(capacity + 1)
-    for nth, offset in enumerate(range(-s, capacity - s + 1), start=action):
-        _trace = np.trace(p, offset)
-        if 0 <= nth < capacity + 1:
-            transp[nth] += _trace
-        elif nth >= capacity + 1:
-            transp[-1] += _trace
-        elif nth < 0:
-            transp[0] += _trace
-        else:
-            raise ValueError("Should not be here")
-
-    return transp
-
-
 # policy evaluation
 
-def policy_evaluation(policy, value):
+def policy_evaluation(policy, value, reward):
+    global discount
 
-    it = np.nditer([policy, value], flags=['multi_index'])
-    while not it.finished:
-        p, v = it[0], it[1]
+    while True:
+        diff = 0
+        it = np.nditer([policy, reward], flags=['multi_index'])
+        while not it.finished:
+            action, rwd = it[0], it[1]
+            s1, s2 = it.multi_index
 
-        reward = expected_rental_reward(s, mu)
-        print(p, v, it.multi_index)
-        it.iternext()
+            _temp = value[s1, s2]
+
+            transp1 = transition_probabilty(s1, request_mean_G1, return_mean_G1, -action)
+            transp2 = transition_probabilty(s2, request_mean_G2, return_mean_G2, action)
+            transp = transp1[:, np.newaxis] * transp2
+
+            value[s1, s2] = rwd - 2 * action + discount * sum((transp * value).flat)
+
+            diff = max(diff, abs(value[s1, s2] - _temp))
+
+            it.iternext()
+
+        print(diff)
+        if diff < 0.01:
+            break
 
 
 if __name__ == '__main__':
 
+    ExpectedRentalReward.set(request_mean_G1, request_mean_G2)
+
+    # TODO: can be simplified, don't need a matrix.
+    reward = ExpectedRentalReward.get()
+
     # Policy to be evaluated
-    policy = np.zeros([capacity + 1]*2)
+    policy = np.zeros([capacity + 1]*2, int)
 
     # Initial value
     value = np.zeros([capacity + 1]*2)
 
+    policy_evaluation(policy, value, reward)
 
-    policy_evaluation(policy, value)
+    import matplotlib.pylab as plt
+
+    plt.pcolor(value)
+    plt.colorbar()
+    plt.show()
 

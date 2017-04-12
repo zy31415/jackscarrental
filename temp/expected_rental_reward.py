@@ -6,7 +6,7 @@ def gen_poisson_and_cutoff(max_cutoff, mu):
     p = poisson.pmf(np.arange(max_cutoff + 1), mu)
     p[]
 
-class ExpectedRentalReward2D:
+class ExpectedRentalReward:
     mu1 = 3
     mu2 = 4
 
