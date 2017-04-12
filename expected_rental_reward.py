@@ -3,26 +3,13 @@ import numpy as np
 
 
 class ExpectedRentalReward(object):
-    cache = None
-    mu1 = None
-    mu2 = None
 
     RENTAL_REWARD = 10.
+    CAPACITY = 20
 
     @classmethod
-    def set(cls, mu1, mu2):
-        cls.mu1 = mu1
-        cls.mu2 = mu2
-        cls.cache = None
-
-    @classmethod
-    def get(cls):
-        if cls.cache is None:
-            r1 = np.asarray([cls.state_reward(s, cls.mu1) for s in range(21)])
-            r2 = np.asarray([cls.state_reward(s, cls.mu2) for s in range(21)])
-            cls.cache = r1[:, np.newaxis] + r2
-
-        return cls.cache
+    def get(cls, expected_request):
+        return np.asarray([cls.state_reward(s, expected_request) for s in range(cls.CAPACITY + 1)])
 
     @classmethod
     def state_reward(cls, s, mu):

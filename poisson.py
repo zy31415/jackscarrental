@@ -13,6 +13,7 @@ class Poisson(object):
         assert isinstance(cutoff, int), "cutoff should be an integer"
 
         if mu not in cls.cache_pmf:
+            print("Calculate poisson ...")
             cls.cache_pmf[mu] = poisson.pmf(np.arange(cls.MAX_CUTOFF + 1), mu)
             cls.cache_sf[mu] = poisson.sf(np.arange(cls.MAX_CUTOFF + 1), mu)
 

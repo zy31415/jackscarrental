@@ -15,6 +15,8 @@ def transition_probabilty(s, req, ret, action=0):
     p_ret = Poisson.pmf_series(ret, 20 - s)
     p = np.outer(p_req, p_ret)
 
+
+
     transp = np.zeros(21)
 
     for nth, offset in enumerate(range(-s, 20-s+1), start=action):
