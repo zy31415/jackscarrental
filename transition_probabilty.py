@@ -1,14 +1,5 @@
 import numpy as np
-from scipy.stats import poisson
-
-
-def poisson_cutoff(lam, cutoff):
-    seq = np.arange(cutoff+1)
-    p = poisson.pmf(seq, lam)
-    # for number of requests equal to or larger than state:
-    p[-1] = 1. - poisson.cdf(cutoff - 1, lam)
-
-    return p
+from poisson import Poisson
 
 
 def transition_probabilty(s, req, ret, action=0):
@@ -20,11 +11,12 @@ def transition_probabilty(s, req, ret, action=0):
     :param action: Action. Positive means move in. Negativ means move out.
     :return: Transition probability.
     '''
-    p_req = poisson_cutoff(req, s)
-    p_ret = poisson_cutoff(ret, 20 - s)
+    p_req = Poisson.pmf_series(req, s)
+    p_ret = Poisson.pmf_series(ret, 20 - s)
     p = np.outer(p_req, p_ret)
 
     transp = np.zeros(21)
+
     for nth, offset in enumerate(range(-s, 20-s+1), start=action):
         _trace = np.trace(p, offset)
         if 0 <= nth < 21:
