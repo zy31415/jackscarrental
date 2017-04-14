@@ -15,9 +15,17 @@ request_mean_G2 = 4
 return_mean_G2 = 2
 
 
-# policy evaluation
+def bellman(action, s1, s2, value, reward1, reward2):
+    transp1 = transition_probabilty(s1, request_mean_G1, return_mean_G1, -action)
+    transp2 = transition_probabilty(s2, request_mean_G2, return_mean_G2, action)
+    transp = np.outer(transp1, transp2)
+    return reward1[s1] + reward2[s2] - 2 * action + discount * sum((transp * value).flat)
 
+
+# policy evaluation
 def policy_evaluation(policy, value, reward1, reward2):
+    # TODO: Action cost is not deterministic, it's also stochastic. Correct it!
+
     global discount
 
     while True:
@@ -29,11 +37,7 @@ def policy_evaluation(policy, value, reward1, reward2):
 
             _temp = value[s1, s2]
 
-            transp1 = transition_probabilty(s1, request_mean_G1, return_mean_G1, -action)
-            transp2 = transition_probabilty(s2, request_mean_G2, return_mean_G2, action)
-            transp = np.outer(transp1, transp2)
-
-            value[s1, s2] = reward1[s1] + reward2[s2] - 2 * action + discount * sum((transp * value).flat)
+            value[s1, s2] = bellman(action, s1, s2, value, reward1, reward2)
 
             diff = max(diff, abs(value[s1, s2] - _temp))
 
@@ -44,48 +48,95 @@ def policy_evaluation(policy, value, reward1, reward2):
             break
 
 
-def array_index_to_diagonal_index(s1, s2):
-    nth_diag = s2 + s1
-    nth_ele = s2 if nth_diag < 20 else 20 - s1
-    return nth_diag, nth_ele
-
-
 def policy_update(policy, value):
-
-    max_index = [np.argmax(np.flipud(value).diagonal(ii)) for ii in range(-20, 21)]
 
     it = np.nditer([policy], flags=['multi_index'])
 
     while not it.finished:
         s1, s2 = it.multi_index
 
-        nth_diag, nth_ele = array_index_to_diagonal_index(s1, s2)
-
-        _dis = max_index[nth_diag] - nth_ele
-
-        policy[s1, s2] = min(_dis, 5) if _dis >= 0 else max(_dis, -5)
+        policy[s1, s2] = np.argmax([bellman(action, s1, s2, value, reward1, reward2) for action in range(6)])
 
         it.iternext()
 
 
+class DPSolver(object):
+
+    capacity = 20
+    rental_reward = 10.
+
+    request_mean_G1 = 3
+    request_mean_G2 = 4
+    return_mean_G1 = 3
+    return_mean_G2 = 2
+
+    discount = 0.9
+
+    policy = None
+    value = None
+
+    def __init__(self):
+        self.policy = np.zeros([self.capacity + 1]*2, int)
+        self.value = np.zeros([self.capacity + 1]*2)
+
+        ExpectedRentalReward.RENTAL_REWARD = self.rental_reward
+        ExpectedRentalReward.CAPACITY = self.capacity
+
+        self.reward1 = ExpectedRentalReward.get(self.request_mean_G1)
+        self.reward2 = ExpectedRentalReward.get(self.request_mean_G2)
+
+    def bellman(self, action, s1, s2):
+        transp1 = transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1, -action)
+        transp2 = transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2, action)
+        transp = np.outer(transp1, transp2)
+
+        return self.reward1[s1] + self.reward2[s2] - 2 * action + self.discount * sum((transp * self.value).flat)
+
+    # policy evaluation
+    def policy_evaluation(self):
+        ''' Keep pocliy fixed and update value. '''
+        # TODO: Action cost is not deterministic, it's also stochastic. Correct it!
+        while True:
+            diff = 0.
+            it = np.nditer([self.policy], flags=['multi_index'])
+
+            while not it.finished:
+                action = it[0]
+                s1, s2 = it.multi_index
+
+                _temp = self.value[s1, s2]
+
+                self.value[s1, s2] = self.bellman(action, s1, s2)
+
+                diff = max(diff, abs(self.value[s1, s2] - _temp))
+
+                it.iternext()
+
+            print(diff)
+            if diff < .01:
+                break
+
+    def policy_update(self):
+        it = np.nditer([self.policy], flags=['multi_index'])
+        while not it.finished:
+            s1, s2 = it.multi_index
+            self.policy[s1, s2] = np.argmax([self.bellman(action, s1, s2) for action in range(6)])
+            it.iternext()
+
+
+
 if __name__ == '__main__':
 
-    reward1 = ExpectedRentalReward.get(request_mean_G1)
-    reward2 = ExpectedRentalReward.get(request_mean_G2)
+    solver = DPSolver()
 
-    # Policy to be evaluated
-    policy = np.zeros([capacity + 1]*2, int)
-
-    # Initial value
-    value = np.zeros([capacity + 1]*2)
+    solver.policy_evaluation()
 
     for ii in range(4):
-        policy_evaluation(policy, value, reward1, reward2)
-        policy_update(policy, value)
+        solver.policy_update()
 
     import matplotlib.pylab as plt
 
-    CS = plt.contour(policy, levels=[0, 1, 2, 3, 4, 5])
+    CS = plt.contour(solver.policy, levels=[0, 1, 2, 3, 4, 5])
     plt.clabel(CS)
     plt.show()
 

@@ -6,7 +6,7 @@ class Poisson(object):
     cache_pmf = {}
     cache_sf = {}
     cache = {}
-    MAX_CUTOFF = 20
+    MAX_CUTOFF = 25
 
     @classmethod
     def pmf_series(cls, mu, cutoff):
