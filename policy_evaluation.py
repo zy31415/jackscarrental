@@ -1,7 +1,7 @@
 import numpy as np
 
-from expected_rental_reward import ExpectedRentalReward
 from transition_probabilty import transition_probabilty
+from poisson import Poisson
 
 
 class DPSolver(object):
@@ -21,16 +21,12 @@ class DPSolver(object):
     policy = None
     value = None
 
-
     def __init__(self):
         self.policy = np.zeros([self.capacity + 1]*2, int)
         self.value = np.zeros([self.capacity + 1]*2)
 
-        ExpectedRentalReward.RENTAL_REWARD = self.rental_reward
-        ExpectedRentalReward.CAPACITY = self.capacity
-
-        self.reward1 = ExpectedRentalReward.get(self.request_mean_G1)
-        self.reward2 = ExpectedRentalReward.get(self.request_mean_G2)
+        self.reward1 = self.expected_rental_reward(self.request_mean_G1)
+        self.reward2 = self.expected_rental_reward(self.request_mean_G2)
 
     def bellman(self, action, s1, s2):
         transp1 = transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1, -action)
@@ -90,6 +86,16 @@ class DPSolver(object):
             ) * self.moving_cost
 
         return cost.dot(p)
+
+    @classmethod
+    def expected_rental_reward(cls, expected_request):
+        return np.asarray([cls._state_reward(s, expected_request) for s in range(cls.capacity + 1)])
+
+    @classmethod
+    def _state_reward(cls, s, mu):
+        rewards = cls.rental_reward * np.arange(s + 1)
+        p = Poisson.pmf_series(mu, cutoff=s)
+        return rewards.dot(p)
 
 
 if __name__ == '__main__':
