@@ -3,62 +3,6 @@ import numpy as np
 from expected_rental_reward import ExpectedRentalReward
 from transition_probabilty import transition_probabilty
 
-# Problem definition:
-capacity = 20
-discount = .9
-rental_reward = 10.
-transfer_reward = -2.
-
-request_mean_G1 = 3
-return_mean_G1 = 3
-request_mean_G2 = 4
-return_mean_G2 = 2
-
-
-def bellman(action, s1, s2, value, reward1, reward2):
-    transp1 = transition_probabilty(s1, request_mean_G1, return_mean_G1, -action)
-    transp2 = transition_probabilty(s2, request_mean_G2, return_mean_G2, action)
-    transp = np.outer(transp1, transp2)
-    return reward1[s1] + reward2[s2] - 2 * action + discount * sum((transp * value).flat)
-
-
-# policy evaluation
-def policy_evaluation(policy, value, reward1, reward2):
-    # TODO: Action cost is not deterministic, it's also stochastic. Correct it!
-
-    global discount
-
-    while True:
-        diff = 0
-        it = np.nditer([policy], flags=['multi_index'])
-        while not it.finished:
-            action = it[0]
-            s1, s2 = it.multi_index
-
-            _temp = value[s1, s2]
-
-            value[s1, s2] = bellman(action, s1, s2, value, reward1, reward2)
-
-            diff = max(diff, abs(value[s1, s2] - _temp))
-
-            it.iternext()
-
-        print(diff)
-        if diff < .01:
-            break
-
-
-def policy_update(policy, value):
-
-    it = np.nditer([policy], flags=['multi_index'])
-
-    while not it.finished:
-        s1, s2 = it.multi_index
-
-        policy[s1, s2] = np.argmax([bellman(action, s1, s2, value, reward1, reward2) for action in range(6)])
-
-        it.iternext()
-
 
 class DPSolver(object):
 
