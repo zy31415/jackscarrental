@@ -114,11 +114,14 @@ class DPSolver(object):
         :param action: Action. Positive means move in. Negativ means move out.
         :return: Transition probability.
         '''
+
+        _ret_sz = self.max_moving + self.capacity
+
         p_req = Poisson.pmf_series(req, s)
-        p_ret = Poisson.pmf_series(ret, 25)
+        p_ret = Poisson.pmf_series(ret, _ret_sz)
         p = np.outer(p_req, p_ret)
 
-        transp = np.asarray([p.trace(offset) for offset in range(-s, 26)])
+        transp = np.asarray([p.trace(offset) for offset in range(-s, _ret_sz + 1)])
 
         # TODO: not hard code 5
         assert abs(action) <= self.max_moving, "action can be large than %s." % self.max_moving
@@ -128,19 +131,19 @@ class DPSolver(object):
             return transp[:21]
 
         if action > 0:
-            transp[20-action] += sum(transp[20-action+1:])
-            transp[20-action+1:] = 0
+            transp[self.capacity-action] += sum(transp[self.capacity-action+1:])
+            transp[self.capacity-action+1:] = 0
 
-            return np.roll(transp, shift=action)[:20+1]
+            return np.roll(transp, shift=action)[:self.capacity+1]
 
         action = -action
         transp[action] += sum(transp[:action])
         transp[:action] = 0
 
-        transp[action+20] += sum(transp[action+20+1:])
-        transp[action+20+1:] = 0
+        transp[action+self.capacity] += sum(transp[action+self.capacity+1:])
+        transp[action+self.capacity+1:] = 0
 
-        return np.roll(transp, shift=-action)[:20+1]
+        return np.roll(transp, shift=-action)[:self.capacity+1]
 
 
 if __name__ == '__main__':
