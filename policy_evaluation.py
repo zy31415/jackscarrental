@@ -1,6 +1,5 @@
 import numpy as np
 
-from transition_probabilty import transition_probabilty
 from poisson import Poisson
 
 
@@ -29,8 +28,8 @@ class DPSolver(object):
         self._reward2 = self.expected_rental_reward(self.request_mean_G2)
 
     def bellman(self, action, s1, s2):
-        transp1 = transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1, -action)
-        transp2 = transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2, action)
+        transp1 = self.transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1, -action)
+        transp2 = self.transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2, action)
         transp = np.outer(transp1, transp2)
 
         return self._reward1[s1] + self._reward2[s2] - self.expected_moving_cost(s1, s2, action) + \
@@ -82,7 +81,7 @@ class DPSolver(object):
 
         # moving from s1 into s2
         if action > 0:
-            p = transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1)
+            p = self.transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1)
             cost = np.asarray(
                 [ii if ii < action else action for ii in range(self.capacity+1)]
             ) * self.moving_cost
@@ -90,7 +89,7 @@ class DPSolver(object):
             return cost.dot(p)
 
         # moving from s2 into s1
-        p = transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2)
+        p = self.transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2)
         cost = np.asarray(
                 [ii if ii < -action else -action for ii in range(self.capacity+1)]
             ) * self.moving_cost
@@ -107,12 +106,48 @@ class DPSolver(object):
         p = Poisson.pmf_series(mu, cutoff=s)
         return rewards.dot(p)
 
+    def transition_probabilty(self, s, req, ret, action=0):
+        '''    
+        :param s: Current State
+        :param req: Mean value of requests
+        :param ret: Mean value of returns
+        :param action: Action. Positive means move in. Negativ means move out.
+        :return: Transition probability.
+        '''
+        p_req = Poisson.pmf_series(req, s)
+        p_ret = Poisson.pmf_series(ret, 25)
+        p = np.outer(p_req, p_ret)
+
+        transp = np.asarray([p.trace(offset) for offset in range(-s, 26)])
+
+        # TODO: not hard code 5
+        assert abs(action) <= self.max_moving, "action can be large than %s." % self.max_moving
+
+        if action == 0:
+            transp[20] += sum(transp[21:])
+            return transp[:21]
+
+        if action > 0:
+            transp[20-action] += sum(transp[20-action+1:])
+            transp[20-action+1:] = 0
+
+            return np.roll(transp, shift=action)[:20+1]
+
+        action = -action
+        transp[action] += sum(transp[:action])
+        transp[:action] = 0
+
+        transp[action+20] += sum(transp[action+20+1:])
+        transp[action+20+1:] = 0
+
+        return np.roll(transp, shift=-action)[:20+1]
+
 
 if __name__ == '__main__':
 
     solver = DPSolver()
 
-    for ii in range(1):
+    for ii in range(4):
         solver.policy_evaluation()
         solver.policy_update()
 
