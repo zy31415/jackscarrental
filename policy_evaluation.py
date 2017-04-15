@@ -25,20 +25,20 @@ class DPSolver(object):
         self.policy = np.zeros([self.capacity + 1]*2, int)
         self.value = np.zeros([self.capacity + 1]*2)
 
-        self.reward1 = self.expected_rental_reward(self.request_mean_G1)
-        self.reward2 = self.expected_rental_reward(self.request_mean_G2)
+        self._reward1 = self.expected_rental_reward(self.request_mean_G1)
+        self._reward2 = self.expected_rental_reward(self.request_mean_G2)
 
     def bellman(self, action, s1, s2):
         transp1 = transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1, -action)
         transp2 = transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2, action)
         transp = np.outer(transp1, transp2)
 
-        return self.reward1[s1] + self.reward2[s2] - self.expected_moving_cost(s1, s2, action) + self.discount * sum((transp * self.value).flat)
+        return self._reward1[s1] + self._reward2[s2] - self.expected_moving_cost(s1, s2, action) + \
+               self.discount * sum((transp * self.value).flat)
 
     # policy evaluation
     def policy_evaluation(self):
         ''' Keep pocliy fixed and update value. '''
-        # TODO: Action cost is not deterministic, it's also stochastic. Correct it!
         while True:
             diff = 0.
             it = np.nditer([self.policy], flags=['multi_index'])
@@ -49,7 +49,7 @@ class DPSolver(object):
 
                 _temp = self.value[s1, s2]
 
-                self.value[s1, s2] = self.bellman(action, s1, s2)
+                self.value[s1, s2] = self.bellman(action=action, s1=s1, s2=s2)
 
                 diff = max(diff, abs(self.value[s1, s2] - _temp))
 
@@ -63,7 +63,17 @@ class DPSolver(object):
         it = np.nditer([self.policy], flags=['multi_index'])
         while not it.finished:
             s1, s2 = it.multi_index
-            self.policy[s1, s2] = np.argmax([self.bellman(action, s1, s2) for action in range(6)])
+
+            _max_val = -1
+            _pol = None
+
+            for act in range(-self.max_moving, self.max_moving + 1):
+                _val = self.bellman(action=act, s1=s1, s2=s2)
+                if _val > _max_val:
+                    _pol = act
+
+            self.policy[s1, s2] = _pol
+
             it.iternext()
 
     def expected_moving_cost(self, s1, s2, action):
@@ -82,7 +92,7 @@ class DPSolver(object):
         # moving from s2 into s1
         p = transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2)
         cost = np.asarray(
-                [ii if ii < action else action for ii in range(self.capacity+1)]
+                [ii if ii < -action else -action for ii in range(self.capacity+1)]
             ) * self.moving_cost
 
         return cost.dot(p)
@@ -102,14 +112,28 @@ if __name__ == '__main__':
 
     solver = DPSolver()
 
-    solver.policy_evaluation()
-
-    for ii in range(4):
+    for ii in range(1):
+        solver.policy_evaluation()
         solver.policy_update()
+
+    print(solver.policy)
 
     import matplotlib.pylab as plt
 
-    CS = plt.contour(solver.policy, levels=[0, 1, 2, 3, 4, 5])
+    plt.subplot(121)
+    CS = plt.contour(solver.policy, levels=range(-6, 6))
     plt.clabel(CS)
+    plt.xlim([0, 20])
+    plt.ylim([0, 20])
+    plt.axis('equal')
+    plt.xticks(range(21))
+    plt.yticks(range(21))
+    plt.grid('on')
+
+    plt.subplot(122)
+    plt.pcolor(solver.value)
+    plt.colorbar()
+    plt.axis('equal')
+
     plt.show()
 
