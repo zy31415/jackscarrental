@@ -6,3 +6,9 @@ in the classic reinforcement book
 **_Reinforcement Learning: An Introduction_** by Sutton and Barto &copy; 2012
 (Example 4.2, Chapter 4)
 
+## Code structure
+All core computational codes are under jackscarrental/ directory 
+as a python library.
+
+Test, example and demo codes are under tests/ directory.
+ 
