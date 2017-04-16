@@ -69,6 +69,7 @@ class DPSolver(object):
             for act in range(-self.max_moving, self.max_moving + 1):
                 _val = self.bellman(action=act, s1=s1, s2=s2)
                 if _val > _max_val:
+                    _max_val = _val
                     _pol = act
 
             self.policy[s1, s2] = _pol
@@ -150,7 +151,7 @@ if __name__ == '__main__':
 
     solver = DPSolver()
 
-    for ii in range(4):
+    for ii in range(10):
         solver.policy_evaluation()
         solver.policy_update()
 
