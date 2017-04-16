@@ -1,21 +1,29 @@
 import numpy as np
 
-from poisson import Poisson
+from .poisson import Poisson
 
 
-class DPSolver(object):
+class PolicyIteration(object):
 
     capacity = 20
     rental_reward = 10.
-    moving_cost = 2.
+    moving_cost = 1.
     max_moving = 5
 
+    # bad_action_cost should always non-negative.
+    # when bad_action_cost == 0, bad action is not punished, otherwise bad action is published according to value
+    # set here.
+    # bad_action_cost = 0
+    bad_action_cost = 100.
+
     request_mean_G1 = 3
-    request_mean_G2 = 4
+    request_mean_G2 = 3
     return_mean_G1 = 3
     return_mean_G2 = 2
 
     discount = 0.9
+
+    PolicyEvaluationError = 0.01
 
     policy = None
     value = None
@@ -26,6 +34,8 @@ class DPSolver(object):
 
         self._reward1 = self.expected_rental_reward(self.request_mean_G1)
         self._reward2 = self.expected_rental_reward(self.request_mean_G2)
+
+        assert self.bad_action_cost >= 0
 
     def bellman(self, action, s1, s2):
         transp1 = self.transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1, -action)
@@ -55,7 +65,7 @@ class DPSolver(object):
                 it.iternext()
 
             print(diff)
-            if diff < .01:
+            if diff < self.PolicyEvaluationError:
                 break
 
     def policy_update(self):
@@ -80,22 +90,45 @@ class DPSolver(object):
         if action == 0:
             return 0.
 
-        # moving from s1 into s2
+        # moving from state s1 into state s2
         if action > 0:
             p = self.transition_probabilty(s1, self.request_mean_G1, self.return_mean_G1)
-            cost = np.asarray(
-                [ii if ii < action else action for ii in range(self.capacity+1)]
-            ) * self.moving_cost
-
+            cost = self._gen_move_cost_array(action)
             return cost.dot(p)
 
-        # moving from s2 into s1
+        # moving from state s2 into state s1
         p = self.transition_probabilty(s2, self.request_mean_G2, self.return_mean_G2)
-        cost = np.asarray(
-                [ii if ii < -action else -action for ii in range(self.capacity+1)]
+        cost = self._gen_move_cost_array(action)
+        return cost.dot(p)
+
+    def _gen_move_cost_array(self, action):
+        '''
+        Generate an array based on which costs of move is calculated.
+        
+        If action > available cars, then this action is considered as a bad action.
+        
+        when self.bad_move_cost == 0, bad action is not punished. The system will move max possible cars.
+        
+        When self.bad_move_cost >0, bad action is punished indicated by this variable.
+        
+        :param action: Number of cars that will be moved from Garage 1 to Garage 2.
+        :return: 
+        '''
+        _action = abs(action)
+
+        # Don't punish bad action:
+        if self.bad_action_cost == 0:
+            cost = np.asarray(
+                [ii if ii < _action else _action for ii in range(self.capacity+1)]
             ) * self.moving_cost
 
-        return cost.dot(p)
+        # bad action is punished
+        else:
+            cost = np.asarray(
+                [self.bad_action_cost if ii < _action else _action for ii in range(self.capacity + 1)]
+            ) * self.moving_cost
+        return cost
+
 
     @classmethod
     def expected_rental_reward(cls, expected_request):
@@ -112,7 +145,7 @@ class DPSolver(object):
         :param s: Current State
         :param req: Mean value of requests
         :param ret: Mean value of returns
-        :param action: Action. Positive means move in. Negativ means move out.
+        :param action: Action. Positive means move in. Negative means move out.
         :return: Transition probability.
         '''
 
@@ -124,19 +157,21 @@ class DPSolver(object):
 
         transp = np.asarray([p.trace(offset) for offset in range(-s, _ret_sz + 1)])
 
-        # TODO: not hard code 5
         assert abs(action) <= self.max_moving, "action can be large than %s." % self.max_moving
 
+        # No cars are being moved
         if action == 0:
             transp[20] += sum(transp[21:])
             return transp[:21]
 
+        # Move cars from Garage 1 to Garage 2
         if action > 0:
             transp[self.capacity-action] += sum(transp[self.capacity-action+1:])
             transp[self.capacity-action+1:] = 0
 
             return np.roll(transp, shift=action)[:self.capacity+1]
 
+        # Move cars from Garage 2 to Garage 1
         action = -action
         transp[action] += sum(transp[:action])
         transp[:action] = 0
@@ -149,9 +184,9 @@ class DPSolver(object):
 
 if __name__ == '__main__':
 
-    solver = DPSolver()
+    solver = PolicyIteration()
 
-    for ii in range(10):
+    for ii in range(4):
         solver.policy_evaluation()
         solver.policy_update()
 
