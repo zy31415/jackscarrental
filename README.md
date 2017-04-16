@@ -3,6 +3,6 @@
 
 This small Python package solves the Jack's Car Rental problem defined 
 in the classic reinforcement book 
-*Reinforcement Learning: An Introduction* by Sutton and Barto &copy; 2012
+**_Reinforcement Learning: An Introduction_** by Sutton and Barto &copy; 2012
 (Example 4.2, Chapter 4)
 
