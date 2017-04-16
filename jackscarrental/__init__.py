@@ -1,1 +1,1 @@
-from .policy_iteration import PolicyIteration
+from .policy_iteration import PolicyIterationSolver

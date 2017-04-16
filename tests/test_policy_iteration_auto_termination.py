@@ -1,9 +1,8 @@
-from jackscarrental import PolicyIteration
-solver = PolicyIteration()
+from jackscarrental import PolicyIterationSolver
 
-for ii in range(4):
-    solver.policy_evaluation()
-    solver.policy_update()
+solver = PolicyIterationSolver()
+
+solver.policy_iteration()
 
 print(solver.policy)
 

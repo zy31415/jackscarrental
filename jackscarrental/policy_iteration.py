@@ -3,7 +3,7 @@ import numpy as np
 from .poisson import Poisson
 
 
-class PolicyIteration(object):
+class PolicyIterationSolver(object):
 
     capacity = 20
     rental_reward = 10.
@@ -69,6 +69,8 @@ class PolicyIteration(object):
                 break
 
     def policy_update(self):
+        is_policy_changed = False
+
         it = np.nditer([self.policy], flags=['multi_index'])
         while not it.finished:
             s1, s2 = it.multi_index
@@ -82,9 +84,13 @@ class PolicyIteration(object):
                     _max_val = _val
                     _pol = act
 
-            self.policy[s1, s2] = _pol
+            if self.policy[s1, s2] != _pol:
+                is_policy_changed = True
+                self.policy[s1, s2] = _pol
 
             it.iternext()
+
+        return is_policy_changed
 
     def expected_moving_cost(self, s1, s2, action):
         if action == 0:
@@ -181,10 +187,15 @@ class PolicyIteration(object):
 
         return np.roll(transp, shift=-action)[:self.capacity+1]
 
+    def policy_iteration(self):
+        self.policy_evaluation()
+        while self.policy_update():
+            self.policy_evaluation()
+
 
 if __name__ == '__main__':
 
-    solver = PolicyIteration()
+    solver = PolicyIterationSolver()
 
     for ii in range(4):
         solver.policy_evaluation()
