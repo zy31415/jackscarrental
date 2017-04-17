@@ -14,12 +14,11 @@ credited $10 by the national company.
 If he is out of cars at that location, then the business is lost.
 Cars become available for renting the day after they are returned.
 To help ensure that cars are available where they are needed,
- Jack can move them between the two locations overnight, 
- at a cost of $2 percar moved. 
+Jack can move them between the two locations overnight, at a cost of $2 per car moved. 
 We assume that the number of cars requested and returned at each location are Poisson random variables, 
-meaning that the probability that the number is n is λn e−λ, 
+meaning that the probability that the number is n is λ^n * e^(−λ) / n!, 
 where λ is the expected number. 
-Suppose λ is 3 n! and 4 for rental requests at the first and second locations and 3 and 2 for returns. 
+Suppose λ is 3 and 4 for rental requests at the first and second locations and 3 and 2 for returns. 
 To simplify the problem slightly, we assume that there can be no more than 20 cars at each location 
 (any additional cars are returned to the nationwide company, 
 and thus disappear from the problem) 
@@ -30,7 +29,6 @@ the state is the number of cars at each location at the end of the day,
 and the actions are the net numbers of cars moved between the two locations overnight.
 
 > **What is the optimal transfer policy of cars between branches?**
-
 
 
 ## Run the code
