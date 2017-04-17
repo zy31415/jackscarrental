@@ -1,4 +1,4 @@
-# Jack's Car Rental - A Reinforcement Learning Example Using Python
+# Jack's Car Rental <br/> A Reinforcement Learning Example Using Python
 ## Introduction
 This small Python package solves the Jack's Car Rental problem defined 
 in the classic reinforcement book 
@@ -18,7 +18,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Make sure that the library can be find by python
+Make sure that the library can be found by python
 ```bash
 export PYTHONPATH = /path/to/jackscarrental/
 ```
