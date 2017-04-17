@@ -49,4 +49,5 @@ Two techniques are used to improve performance.
 
 ## Reference:
 https://github.com/swiffo/Dynamic-Programming-Car-Rental
+Comparing the above solution, the one presented in this repository is much faster because the aforementioned techniques.  
 
