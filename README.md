@@ -48,6 +48,7 @@ Two techniques are used to improve performance.
 - Use numpy matrix operation wherever possible to avoid python loop, which is slow.
 
 ## Reference:
-https://github.com/swiffo/Dynamic-Programming-Car-Rental
+- https://github.com/swiffo/Dynamic-Programming-Car-Rental
+
 Comparing the above solution, the one presented in this repository is much faster because the aforementioned techniques.  
 
