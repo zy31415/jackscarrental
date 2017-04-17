@@ -28,12 +28,14 @@ Go to the tests directory and type:
 ```bash
 python scripts_you_want_to_run.py
 ```
-
 ## Code structure
 All core computational codes are under jackscarrental/ directory 
 as a python library.
 
 Test, example and demo codes are under tests/ directory.
 
-
 ## Implementation details
+
+Two techniques are used to improve performance.
+- Results from scipy.stats.poisson are cached.
+- Use numpy matrix operation wherever possible to avoid python loop, which is slow.
