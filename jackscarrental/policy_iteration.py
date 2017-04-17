@@ -188,6 +188,10 @@ class PolicyIterationSolver(object):
         return np.roll(transp, shift=-action)[:self.capacity+1]
 
     def policy_iteration(self):
+        '''
+        Caveat: the situation where the policy continually switches between two or more policies that are equally good is not considered yet. 
+        :return: 
+        '''
         self.policy_evaluation()
         while self.policy_update():
             self.policy_evaluation()

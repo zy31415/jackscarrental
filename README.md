@@ -67,11 +67,15 @@ Two techniques are used to improve performance:
 - Results from scipy.stats.poisson are cached.
 - Use numpy matrix operation wherever possible to avoid python loop, which is slow.
 
-### Problem interpretation
+### Problem interpretation: When requests greater than availability
 When the requests are greater than available cars, in Sutton's original problem, I believe that the reward is zero.
 However, in my solution here, I interpret the situation differently:
 I give the rewards as the rewards that allowed by the available cars.
 This complicates the computation.
+
+### Bad action punishment: when try to move more cars than there is
+Add punishment for actions that try to move more cars than there is in one location, 
+otherwise the best policy always try to move maximum allowed cars when there is not enough cars available in one place. 
 
 ## Reference:
 - https://github.com/swiffo/Dynamic-Programming-Car-Rental
