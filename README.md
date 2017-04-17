@@ -68,7 +68,10 @@ Two techniques are used to improve performance:
 - Use numpy matrix operation wherever possible to avoid python loop, which is slow.
 
 ### Problem interpretation
-
+When the requests are greater than available cars, in Sutton's original problem, I believe that the reward is zero.
+However, in my solution here, I interpret the situation differently:
+I give the rewards as the rewards that allowed by the available cars.
+This complicates the computation.
 
 ## Reference:
 - https://github.com/swiffo/Dynamic-Programming-Car-Rental
