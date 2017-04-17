@@ -6,7 +6,28 @@ in the classic reinforcement book
 (Example 4.2, Chapter 4)
 
 The original problem reads as follows:
-> Jack manages two branches of a car rental company. Each day a Poisson-distributed number of customers come to each location and for each car rented out, Jack earns $10. Any car rented is returned at the end of the day but must spend the next day being serviced (not available for renting). Both rentable and serviced cars take up space and each branch has an upper limit to the cars that can be stored. Jack is able to transfer cars between the branches at the cost of $2 per car overnight. Only cars not being serviced can be transferred and transferred cars are available for rent at the new branch the next day.
+> **Example 4.2**: 
+Jack’s Car Rental Jack manages two locations for a nationwide car rental company.
+Each day, some number of customers arrive at each location to rent cars. 
+If Jack has a car available, he rents it out and is
+credited $10 by the national company. 
+If he is out of cars at that location, then the business is lost.
+Cars become available for renting the day after they are returned.
+To help ensure that cars are available where they are needed,
+ Jack can move them between the two locations overnight, 
+ at a cost of $2 percar moved. 
+We assume that the number of cars requested and returned at each location are Poisson random variables, 
+meaning that the probability that the number is n is λn e−λ, 
+where λ is the expected number. 
+Suppose λ is 3 n! and 4 for rental requests at the first and second locations and 3 and 2 for returns. 
+To simplify the problem slightly, we assume that there can be no more than 20 cars at each location 
+(any additional cars are returned to the nationwide company, 
+and thus disappear from the problem) 
+and a maximum of five cars can be moved from one location to the other in one night. 
+We take the discount rate to be γ = 0.9 and formulate this as a continuing finite MDP, 
+where the time steps are days, 
+the state is the number of cars at each location at the end of the day, 
+and the actions are the net numbers of cars moved between the two locations overnight.
 
 > **What is the optimal transfer policy of cars between branches?**
 
@@ -43,12 +64,16 @@ Test, example and demo codes are under tests/ directory.
 
 ## Implementation details
 
-Two techniques are used to improve performance.
+### Performance
+Two techniques are used to improve performance:
 - Results from scipy.stats.poisson are cached.
 - Use numpy matrix operation wherever possible to avoid python loop, which is slow.
+
+### Problem interpretation
+
 
 ## Reference:
 - https://github.com/swiffo/Dynamic-Programming-Car-Rental
 
-Comparing the above solution, the one presented in this repository is much faster because the aforementioned techniques.  
+Comparing to the above solution, the one presented in this repository is much faster because the aforementioned techniques.  
 
